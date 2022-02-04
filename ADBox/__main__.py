@@ -10,15 +10,19 @@ from PySide6.QtWidgets import (QApplication)
 
 __version__ = "0.1.0"
 __author__ = 'Ping-P0ng'
+# TODO: add search syntax
+# TODO: add right click search
+# TODO: dump trush/gpo/acl
 
 if __name__ == "__main__":
 
     BoxParser = argparse.ArgumentParser(description='ADBox')
+    # TODO: add port argument
     BoxParser.add_argument("-m", dest="module", type=str, help="ADBox module", choices=["dump","gui"])
     BoxParser.add_argument("-s", dest="srv", type=str, help="Active Directory server")
     BoxParser.add_argument("-u", dest="user", type=str, help="Domain user name")
     BoxParser.add_argument("-p", dest="passwd", type=str, help="Domain user password")
-    BoxParser.add_argument('-ssl', type=bool, default=False, help='Use ldap ssl')
+    BoxParser.add_argument('-ssl', dest="ssl", action='store_true', help='Use ldap ssl')
     BoxParser.add_argument('-debug', dest='debug', action='store_true', help='Set debug print')
     BoxParser.add_argument("-db", dest="dbfile", type=str, default="adbox.sqlite", help="DB file name")
     BoxParser.add_argument("-v", dest="version", action='store_true', help="Show version")
@@ -53,7 +57,7 @@ if __name__ == "__main__":
             else:
                 MainLogger.info("ADBox.main: Fail connection, program close")
         else:
-            MainLogger.info("ADBox.main: User/Server/Passwd not set")
+            MainLogger.info("ADBox.main: user(-u)/server(-s)/password(-p) not set")
     elif(BoxArgs.module == "gui"):
         if (os.path.exists(BoxArgs.dbfile)):
             MainBoxSql = BoxSql.BoxSql(BoxArgs.dbfile, MainLogger)

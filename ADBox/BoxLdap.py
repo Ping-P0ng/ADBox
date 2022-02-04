@@ -18,8 +18,7 @@ class BoxLdap(object):
         self.__ADServer = ldap3.Server(Server, port=LdapPort, use_ssl=UseSSL)
         self.__LdapLogger.debug("BoxLdap.__init__: Config server - ldap://{0}:{1}".format(Server,LdapPort))
         try:
-            self.__ADConnect = ldap3.Connection(self.__ADServer, User, Password,
-                                                client_strategy=ldap3.SAFE_SYNC, auto_bind=True)
+            self.__ADConnect = ldap3.Connection(self.__ADServer, User, Password, client_strategy=ldap3.SAFE_SYNC, auto_bind=True)
         except Exception as LdapExcept:
             self.__LdapLogger.error("BoxLdap.__init__: {0}".format(LdapExcept))
         else:

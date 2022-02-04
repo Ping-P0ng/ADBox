@@ -55,6 +55,7 @@ class BoxGUI(QWidget):
         self.__Edit.returnPressed.connect(self.__SearchObjects)
 
     def __AddObject(self,Objects, ObjType):
+        # TODO: set "Domain Controllers" default icon
         if (os.name == "nt"):
             OtherIcon = QIcon("{0}\\resources\\adbox.png".format(os.path.dirname(os.path.abspath(__file__))))
             MainIcon = QIcon("{0}\\resources\\{1}.png".format(os.path.dirname(os.path.abspath(__file__)), ObjType))
@@ -128,6 +129,8 @@ class BoxGUI(QWidget):
 
     @Slot()
     def __TreeViewDoubleClick(self, DCObj):
+        # TODO: parse datetime
+        # TODO: parse useraccountcontrol
         StObject = self.__TreeView.model().itemFromIndex(DCObj)
         ObjValue = StObject.text()
         if(StObject.rowCount() == 0):
