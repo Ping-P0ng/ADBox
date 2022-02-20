@@ -27,13 +27,13 @@ class BoxSql(object):
                     self.__DBLogger.info("BoxSql.__init__: Create new db {0}".format(DBName))
                 try:
                     self.__BoxDBCursor.execute(
-                        '''CREATE TABLE users (dn text, sAMAccountName text,userAccountControl int, RawData text)''')
+                        '''CREATE TABLE users (dn text, sAMAccountName text, RawData text)''')
                     self.__BoxDBCursor.execute(
                         '''CREATE TABLE groups (dn text, sAMAccountName text, RawData text)''')
                     self.__BoxDBCursor.execute(
                         '''CREATE TABLE pwd (sAMAccountName text, LM text, NT text, pass text)''')
                     self.__BoxDBCursor.execute(
-                        '''CREATE TABLE computers (dn text, sAMAccountName text,userAccountControl int, RawData text)''')
+                        '''CREATE TABLE computers (dn text, sAMAccountName text, RawData text)''')
                     self.__BoxDBObject.commit()
                 except Exception as BoxExcept:
                     self.__DBLogger.error("BoxSql.__init__: Exception {0}".format(BoxExcept))
@@ -64,9 +64,9 @@ class BoxSql(object):
         except Exception as BoxExcept:
             self.__DBLogger.error("BoxSql.__CheckType: Exception {0}".format(BoxExcept))
 
-    def AddUser(self, dn, sam, uac, raw):
+    def AddUser(self, dn, sam, raw):
         if((1, ) != self.__BoxDBCursor.execute("SELECT EXISTS(SELECT 1 FROM users WHERE sAMAccountName='{0}')".format(sam)).fetchone()):
-            self.__BoxDBCursor.execute("""INSERT INTO users VALUES ('{0}','{1}',{2},'{3}')""".format(dn, sam, uac, json.dumps(dict(raw), cls=DateTimeEncoder)))
+            self.__BoxDBCursor.execute("""INSERT INTO users VALUES ('{0}','{1}','{2}')""".format(dn, sam, json.dumps(dict(raw), cls=DateTimeEncoder)))
             self.__DBLogger.debug("BoxSql.AddUser: Add new user - {0}".format(dn))
         else:
             BoxUser = self.__BoxDBCursor.execute("SELECT RawData FROM users WHERE sAMAccountName='{0}'".format(sam)).fetchone()
@@ -74,18 +74,18 @@ class BoxSql(object):
             TestDump = hashlib.sha256(json.dumps(dict(raw), cls=DateTimeEncoder).encode('utf-8')).hexdigest()
             if(TestDB != TestDump):
                 self.__BoxDBCursor.execute(
-                    """UPDATE users SET userAccountControl={1}, RawData='{2}' WHERE sAMAccountName='{0}'""".format(
-                        sam, uac, json.dumps(dict(raw), cls=DateTimeEncoder)))
+                    """UPDATE users SET RawData='{1}' WHERE sAMAccountName='{0}'""".format(
+                        sam, json.dumps(dict(raw), cls=DateTimeEncoder)))
                 self.__DBLogger.debug("BoxSql.AddUser: Update user info - {0}".format(dn))
             else:
                 self.__DBLogger.debug("BoxSql.AddUser: User exist - {0}".format(dn))
         self.__BoxDBObject.commit()
 
-    def AddComputer(self, dn, sam, uac, raw):
+    def AddComputer(self, dn, sam, raw):
         self.__CheckType(raw)
         if ((1,) != self.__BoxDBCursor.execute("SELECT EXISTS(SELECT 1 FROM computers WHERE sAMAccountName='{0}')".format(sam)).fetchone()):
             self.__BoxDBCursor.execute(
-                """INSERT INTO computers VALUES ('{0}','{1}',{2},'{3}')""".format(dn, sam, uac,json.dumps(dict(raw),cls=DateTimeEncoder)))
+                """INSERT INTO computers VALUES ('{0}','{1}','{2}')""".format(dn, sam,json.dumps(dict(raw),cls=DateTimeEncoder)))
             self.__DBLogger.debug("BoxSql.AddComputers: Add new computer - {0}".format(dn))
         else:
             BoxUser = self.__BoxDBCursor.execute("SELECT RawData FROM computers WHERE sAMAccountName='{0}'".format(sam)).fetchone()
@@ -93,7 +93,7 @@ class BoxSql(object):
             TestDump = hashlib.sha256(json.dumps(dict(raw), cls=DateTimeEncoder).encode('utf-8')).hexdigest()
             if (TestDB != TestDump):
                 self.__BoxDBCursor.execute(
-                    """UPDATE computers SET userAccountControl={1}, RawData='{2}' WHERE sAMAccountName='{0}'""".format(sam, uac, json.dumps(dict(raw), cls=DateTimeEncoder)))
+                    """UPDATE computers SET RawData='{1}' WHERE sAMAccountName='{0}'""".format(sam, json.dumps(dict(raw), cls=DateTimeEncoder)))
                 self.__DBLogger.debug("BoxSql.AddComputers: Update computer info - {0}".format(dn))
             else:
                 self.__DBLogger.debug("BoxSql.AddComputers: Computer exist - {0}".format(dn))
@@ -120,18 +120,7 @@ class BoxSql(object):
 
     def _LoadObject(self,TableName):
         try:
-            Return =  self.__BoxDBCursor.execute("""SELECT dn FROM {0}""".format(TableName)).fetchall()
+            Return =  self.__BoxDBCursor.execute("""SELECT * FROM {0}""".format(TableName)).fetchall()
         except Exception as BoxExcept:
             self.__DBLogger.error("BoxSql._LoadObject: Exception {0}".format(BoxExcept))
         return(Return)
-
-    def _GetObject(self, TableName, ObjDName):
-        try:
-            QueryStr = """SELECT RawData FROM {0} WHERE dn LIKE 'CN={1}%'""".format(TableName,ObjDName)
-            Return = self.__BoxDBCursor.execute(QueryStr).fetchone()
-            if(Return == []):
-                self.__DBLogger.debug("BoxSql._GetObject: Object not found - {0}".format(QueryStr))
-                Return = None
-        except Exception as BoxExcept:
-            self.__DBLogger.error("BoxSql._GetObject: Exception {0}".format(BoxExcept))
-        return (Return)

@@ -53,6 +53,28 @@ class BoxGUI(QWidget):
         self.HLayout.addWidget(self.__Splitter)
         self.setLayout(self.HLayout)
         self.__Edit.returnPressed.connect(self.__SearchObjects)
+        self.__UserAccountControls = {"SCRIPT": 1,
+            "ACCOUNTDISABLE": 2,
+            "HOMEDIR_REQUIRED": 8,
+            "LOCKOUT": 16,
+            "PASSWD_NOTREQD": 32,
+            "PASSWD_CANT_CHANGE": 64,
+            "ENCRYPTED_TEXT_PWD_ALLOWED": 128,
+            "TEMP_DUPLICATE_ACCOUNT":256,
+            "NORMAL_ACCOUNT": 512,
+            "INTERDOMAIN_TRUST_ACCOUNT": 2048,
+            "WORKSTATION_TRUST_ACCOUNT": 4096,
+            "SERVER_TRUST_ACCOUNT": 8192,
+            "DONT_EXPIRE_PASSWORD": 65536,
+            "MNS_LOGON_ACCOUNT": 131072,
+            "SMARTCARD_REQUIRED": 262144,
+            "TRUSTED_FOR_DELEGATION": 524288,
+            "NOT_DELEGATED": 1048576,
+            "USE_DES_KEY_ONLY": 2097152,
+            "DONT_REQ_PREAUTH": 4194304,
+            "PASSWORD_EXPIRED ": 8388608,
+            "TRUSTED_TO_AUTH_FOR_DELEGATION": 16777216,
+            "PARTIAL_SECRETS_ACCOUNT": 67108864}
 
     def __AddObject(self,Objects, ObjType):
         # TODO: set "Domain Controllers" default icon
@@ -110,7 +132,8 @@ class BoxGUI(QWidget):
                     if (AddItem):
                         TmpItem = QStandardItem(TmpStr)
                         TmpItem.setIcon(MainIcon)
-                        TmpItem.setData(ObjType)
+                        TmpObjData = [ObjType,Obj[2]]
+                        TmpItem.setData(TmpObjData)
                         ParentItem.appendRow(TmpItem)
                         ParentItem = TmpItem
                 ParentItem = self.__Model.invisibleRootItem()
@@ -130,24 +153,35 @@ class BoxGUI(QWidget):
     @Slot()
     def __TreeViewDoubleClick(self, DCObj):
         # TODO: parse datetime
-        # TODO: parse useraccountcontrol
+        # TODO: parse sAMAccountType
         StObject = self.__TreeView.model().itemFromIndex(DCObj)
         ObjValue = StObject.text()
         if(StObject.rowCount() == 0):
             self.__GUILogger.debug("BoxGUI:__TreeViewDoubleClick: Object name '{0}'".format(ObjValue))
-            ObjType = StObject.data()
-            RawData = self.__DBObject._GetObject(ObjType, ObjValue)
+            RawData = StObject.data()[1]
             if(RawData == None):
                 self.__TextEdit.setText("Object not found '{0}'".format(ObjValue))
             else:
                 PrintStr = ""
-                JsonData = json.loads(RawData[0])
+                JsonData = json.loads(RawData)
                 for RawKey in JsonData.keys():
                     if (isinstance(JsonData[RawKey], list)):
                         for RawValue in JsonData[RawKey]:
                             PrintStr += "{0}: {1}\n".format(RawKey, RawValue)
                     else:
-                        PrintStr += "{0}: {1}\n".format(RawKey, JsonData[RawKey])
+                        if(RawKey == "userAccountControl"):
+                            UACStr = ""
+                            for UACKey in self.__UserAccountControls.keys():
+                                if(JsonData[RawKey] & self.__UserAccountControls[UACKey] != 0):
+                                    UACStr += "{0} ,".format(UACKey)
+                            PrintStr += "{0}: {1}\n".format(RawKey, UACStr[:-1])
+                        elif(RawKey == "accountExpires"):
+                            if(JsonData[RawKey] == "9999-12-31 23:59:59.999999+00:00"):
+                                PrintStr += "{0}: ACCOUNT_DONT_EXPIRE\n".format(RawKey, JsonData[RawKey])
+                            else:
+                                PrintStr += "{0}: {1}\n".format(RawKey, JsonData[RawKey])
+                        else:
+                            PrintStr += "{0}: {1}\n".format(RawKey, JsonData[RawKey])
                 self.__TextEdit.setText(PrintStr)
 
     def __ExpandedViewObject(self, Obj, ExpType):

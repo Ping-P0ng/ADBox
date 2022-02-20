@@ -34,7 +34,7 @@ class BoxLdap(object):
         for Entry in SearchResult[2]:
             if(Entry["type"]=="searchResEntry"):
                 try:
-                    MainBoxSql.AddUser(Entry["attributes"]["distinguishedName"], Entry["attributes"]["sAMAccountName"], Entry["attributes"]["userAccountControl"], Entry["attributes"])
+                    MainBoxSql.AddUser(Entry["attributes"]["distinguishedName"], Entry["attributes"]["sAMAccountName"], Entry["attributes"])
                 except Exception as LdapExcept:
                     self.__LdapLogger.error("BoxLdap.GetUsers: Fail add user - {0}".format(LdapExcept))
         self.__LdapLogger.info("BoxLdap.GetUsers: Add {0} users".format(len(SearchResult[2])))
@@ -44,7 +44,7 @@ class BoxLdap(object):
         for Entry in SearchResult[2]:
             if(Entry["type"]=="searchResEntry"):
                 try:
-                    MainBoxSql.AddComputer(Entry["attributes"]["distinguishedName"], Entry["attributes"]["sAMAccountName"], Entry["attributes"]["userAccountControl"], Entry["attributes"])
+                    MainBoxSql.AddComputer(Entry["attributes"]["distinguishedName"], Entry["attributes"]["sAMAccountName"], Entry["attributes"])
                 except Exception as LdapExcept:
                     self.__LdapLogger.error("BoxLdap.GetComputers: Fail add computer - {0}".format(LdapExcept))
         self.__LdapLogger.info("BoxLdap.GetComputers: Add {0} computers".format(len(SearchResult[2])))
