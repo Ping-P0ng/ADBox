@@ -1,32 +1,43 @@
-# ADBox
+# README
 
----
+## ADBox
+
+***
+
 ADBox is a viewer for active directory objects.
 
-# Installation
+## Installation
 
----
+***
+
 ```shell
 pip3 install ADBox
 ```
-#### or
+
+**or**
+
 ```shell
 python3 setup.py install
 ```
 
-# Usage
+## Usage
 
----
-- #### dump - module for extracting AD objects (users/computers/groups) and saving to the database (sqlite3)
+***
+
+* **dump - module for extracting AD objects (users/computers/groups) and saving to the database (sqlite3)**
+
 ```python
     python3 -m ADBox -m dump -srv 192.168.1.100 -usr TEST\user -passwd TestPassword
 ```
-- #### gui - graphical interface for viewing objects
+
+* **gui - graphical interface for viewing objects**
+
 ```python
     python3 -m ADBox -m gui
 ```
 
-# Screenshots
+## Screenshots
 
----
-![Alt text](./screenshot/Example.png?raw=true "Example")
+***
+
+![Alt text](screenshot/Example.png)
