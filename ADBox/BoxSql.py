@@ -1,8 +1,8 @@
 import sqlite3
 import os
-import datetime
 import json
 import hashlib
+import datetime
 
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, z):
@@ -12,6 +12,9 @@ class DateTimeEncoder(json.JSONEncoder):
             return(super().default(z))
 
 class BoxSql(object):
+    # __init__
+    # - DBName: db file path
+    # - MainLogger: logger object
     def __init__(self, DBName, MainLogger):
         self._ChceckDB = False
         self.__DBLogger = MainLogger
@@ -34,6 +37,8 @@ class BoxSql(object):
                         '''CREATE TABLE pwd (sAMAccountName text, LM text, NT text, pass text)''')
                     self.__BoxDBCursor.execute(
                         '''CREATE TABLE computers (dn text, sAMAccountName text, RawData text)''')
+                    self.__BoxDBCursor.execute(
+                        '''CREATE TABLE settings (name text, value text)''')
                     self.__BoxDBObject.commit()
                 except Exception as BoxExcept:
                     self.__DBLogger.error("BoxSql.__init__: Exception {0}".format(BoxExcept))
@@ -50,7 +55,6 @@ class BoxSql(object):
                     self.__DBLogger.info("BoxSql.__init__: Open success {0}".format(DBName))
                     self._ChceckDB = True
 
-
     def __CheckType(self,JsonObj):
         try:
             for JsonKey in JsonObj.keys():
@@ -63,6 +67,26 @@ class BoxSql(object):
                         JsonObj[JsonKey] = "HEX({0})".format(JsonObj[JsonKey].hex()) # bytes.fromhex('deadbeef')
         except Exception as BoxExcept:
             self.__DBLogger.error("BoxSql.__CheckType: Exception {0}".format(BoxExcept))
+
+    def _GetSettings(self):
+        try:
+            Return =  self.__BoxDBCursor.execute("""SELECT * FROM settings""").fetchall()
+        except Exception as BoxExcept:
+            self.__DBLogger.error("BoxSql._GetSettings: Exception {0}".format(BoxExcept))
+        return(Return)
+
+    # _AddSetting
+    # - Name
+    # - Value
+    def _AddSetting(self, Name, Value):
+        if ((1,) != self.__BoxDBCursor.execute("SELECT EXISTS(SELECT 1 FROM settings WHERE name='{0}')".format(Name)).fetchone()):
+            self.__BoxDBCursor.execute("""INSERT INTO settings VALUES ('{0}','{1}')""".format(Name, Value))
+            self.__DBLogger.debug("BoxSql._AddSetting: Add seting name - {0}".format(Name))
+        else:
+            self.__BoxDBCursor.execute("""UPDATE settings SET value='{1}' WHERE name='{0}'""".format(Name, Value))
+            self.__DBLogger.debug("BoxSql._AddSetting: Update seting name - {0}".format(Name))
+        self.__BoxDBObject.commit()
+
 
     def AddUser(self, dn, sam, raw):
         if((1, ) != self.__BoxDBCursor.execute("SELECT EXISTS(SELECT 1 FROM users WHERE sAMAccountName='{0}')".format(sam)).fetchone()):

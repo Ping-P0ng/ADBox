@@ -1,8 +1,9 @@
-from PySide6.QtWidgets import (QTextEdit, QSplitter, QVBoxLayout, QWidget, QLineEdit, QHBoxLayout, QTreeView, QAbstractItemView)
+from PySide6.QtWidgets import (QTextEdit, QSplitter, QWidget, QLineEdit, QHBoxLayout, QTreeView, QAbstractItemView, QCompleter)
 from PySide6.QtCore import (Qt, Slot)
 from PySide6.QtGui import (QStandardItemModel, QStandardItem, QIcon)
 import json
 import os
+from ADBox import BoxSearch
 
 class BoxGUI(QWidget):
     def __init__(self,GUILogger,DBObject):
@@ -16,6 +17,7 @@ class BoxGUI(QWidget):
         self.__GUILogger = GUILogger
         self.__DBObject = DBObject
         self.__TextEdit = QTextEdit()
+        self.__TextEdit.setReadOnly(True)
         self.__TextEdit.setStyleSheet("""
         QTextEdit {background-color: #f1f1f2; border: 2px solid #1e434c; border-radius: 6px; padding: 5px;}
         QScrollBar {background: #f1f1f2;}
@@ -75,6 +77,18 @@ class BoxGUI(QWidget):
             "PASSWORD_EXPIRED ": 8388608,
             "TRUSTED_TO_AUTH_FOR_DELEGATION": 16777216,
             "PARTIAL_SECRETS_ACCOUNT": 67108864}
+        self.__SamAccountType = { "SAM_DOMAIN_OBJECT": 0x0,
+        "SAM_GROUP_OBJECT" : 0x10000000,
+        "SAM_NON_SECURITY_GROUP_OBJECT" : 0x10000001,
+        "SAM_ALIAS_OBJECT" : 0x20000000,
+        "SAM_NON_SECURITY_ALIAS_OBJECT" : 0x20000001,
+        #"SAM_USER_OBJECT" : 0x30000000,
+        "SAM_NORMAL_USER_ACCOUNT" : 0x30000000,
+        "SAM_MACHINE_ACCOUNT" : 0x30000001,
+        "SAM_TRUST_ACCOUNT" : 0x30000002,
+        "SAM_APP_BASIC_GROUP" : 0x40000000,
+        "SAM_APP_QUERY_GROUP" : 0x40000001,
+        "SAM_ACCOUNT_TYPE_MAX" : 0x7fffffff}
 
     def __AddObject(self,Objects, ObjType):
         # TODO: set "Domain Controllers" default icon
@@ -140,6 +154,15 @@ class BoxGUI(QWidget):
         else:
             self.__GUILogger.info("BoxGUI:__AddObject: Objects not found")
 
+
+    def __InitQCompleter(self):
+        Settings =  self.__DBObject._GetSettings()
+        for CurrentSetting in Settings:
+            if(CurrentSetting[0] == "SearchAtt"):
+                self.SearchAtt = CurrentSetting[1]
+                self.__Completer = QCompleter(self.SearchAtt.split('|')[:-1])
+                self.__Edit.setCompleter(self.__Completer)
+
     def _LoadObject(self):
         self.__Model = QStandardItemModel()
         Objects = self.__DBObject._LoadObject("users")
@@ -148,12 +171,11 @@ class BoxGUI(QWidget):
         self.__AddObject(Objects,"computers")
         Objects = self.__DBObject._LoadObject("groups")
         self.__AddObject(Objects,"groups")
+        self.__InitQCompleter()
         self.__TreeView.setModel(self.__Model)
 
     @Slot()
     def __TreeViewDoubleClick(self, DCObj):
-        # TODO: parse datetime
-        # TODO: parse sAMAccountType
         StObject = self.__TreeView.model().itemFromIndex(DCObj)
         ObjValue = StObject.text()
         if(StObject.rowCount() == 0):
@@ -180,6 +202,13 @@ class BoxGUI(QWidget):
                                 PrintStr += "{0}: ACCOUNT_DONT_EXPIRE\n".format(RawKey, JsonData[RawKey])
                             else:
                                 PrintStr += "{0}: {1}\n".format(RawKey, JsonData[RawKey])
+                        elif(RawKey == "sAMAccountType"):
+                            UACStr = ""
+                            for UACKey in self.__SamAccountType.keys():
+                                if(JsonData[RawKey] == self.__SamAccountType[UACKey]):
+                                    UACStr += "{0} ,".format(UACKey)
+                                    break
+                            PrintStr += "{0}: {1}\n".format(RawKey, UACStr[:-1])
                         else:
                             PrintStr += "{0}: {1}\n".format(RawKey, JsonData[RawKey])
                 self.__TextEdit.setText(PrintStr)
@@ -209,6 +238,7 @@ class BoxGUI(QWidget):
     @Slot()
     def __SearchObjects(self):
         SearchText = self.__Edit.text()
+        SearchObj = BoxSearch.BoxSearch(SearchText, self.SearchAtt, self.__GUILogger)
         ParentItem = self.__Model.invisibleRootItem()
-        self.__EnumViewObject(SearchText, ParentItem)
-        pass
+        SearchObj._Search(ParentItem, self.__TreeView)
+        #self.__EnumViewObject(SearchText, ParentItem)
