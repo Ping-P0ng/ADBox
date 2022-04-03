@@ -1,7 +1,7 @@
 
 ![ADBox](./screenshot/AD.png "ADBox")
 
-ADBox is a viewer for active directory objects.
+ADBox is a viewer for active directory objects. For more information view - https://pingp0ng.gitbook.io/pingp0ng/
 
 
 # Installation

@@ -6,7 +6,7 @@ import os
 from ADBox import BoxSearch
 
 class BoxGUI(QWidget):
-    def __init__(self,GUILogger,DBObject):
+    def __init__(self, GUILogger, DBObject):
         super().__init__()
         if(os.name == "nt"):
             self.setWindowIcon(QIcon(".\\resources\\adbox.png"))
@@ -218,27 +218,9 @@ class BoxGUI(QWidget):
         if(Obj.parent() != None):
             self.__ExpandedViewObject(Obj.parent(), ExpType)
 
-    def __EnumViewObject(self, SearchText, ParentItem):
-        ChildRowCount = ParentItem.rowCount()
-        for i in range(0,ChildRowCount):
-            TmpChild = ParentItem.child(i)
-            if(TmpChild.rowCount() == 0):
-                if(SearchText == ""):
-                    self.__TreeView.setRowHidden(i, ParentItem.index(), False)
-                    self.__ExpandedViewObject(ParentItem, False)
-                else:
-                    if(SearchText not in TmpChild.text()):
-                        self.__TreeView.setRowHidden(i, ParentItem.index(), True)
-                    else:
-                        self.__TreeView.setRowHidden(i, ParentItem.index(), False)
-                        self.__ExpandedViewObject(ParentItem, True)
-            else:
-                self.__EnumViewObject(SearchText, TmpChild)
-
     @Slot()
     def __SearchObjects(self):
         SearchText = self.__Edit.text()
         SearchObj = BoxSearch.BoxSearch(SearchText, self.SearchAtt, self.__GUILogger)
         ParentItem = self.__Model.invisibleRootItem()
         SearchObj._Search(ParentItem, self.__TreeView)
-        #self.__EnumViewObject(SearchText, ParentItem)

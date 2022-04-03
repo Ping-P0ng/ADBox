@@ -36,14 +36,17 @@ class BoxSearch(object):
                     if(self._Type == "default"):
                         TargetText = TmpChild.text()
                     elif(self._Type == "attribute"):
+                        TargetText = ""
                         JsonObj = json.loads(TmpChild.data()[1])
-                        Target = JsonObj[self.__SearchAttribute]
-                        if (isinstance(Target, list)):
-                            TargetText = ""
-                            for CurrentValue in Target:
-                                TargetText += "{0}|".format(CurrentValue)
-                        else:
-                            TargetText = Target
+                        if(self.__SearchAttribute in JsonObj.keys()):
+                            Target = JsonObj[self.__SearchAttribute]
+                            if (isinstance(Target, list)):
+                                for CurrentValue in Target:
+                                    TargetText += "{0}|".format(CurrentValue)
+                            elif (isinstance(Target, int)):
+                                TargetText = str(Target)
+                            else:
+                                TargetText = Target
                     if (self.__SearchString not in TargetText):
                         BoxGUITreeView.setRowHidden(i, ParentItem.index(), True)
                     else:

@@ -1,5 +1,4 @@
 import ldap3
-import json
 
 
 
@@ -34,19 +33,22 @@ class BoxLdap(object):
             self._ConnectStatus = True
             self.__LdapLogger.info("BoxLdap.__init__: Bind successful")
             self._ADRoot = self.__ADServer.schema.schema_entry[self.__ADServer.schema.schema_entry.find("DC="):]
+            self.__Settings["Info"]["ADRoot"] = self._ADRoot
             self.__LdapLogger.info("BoxLdap.__init__: AD root - {0}".format(self._ADRoot))
 
     # __BuildSearchAttributes
     # - JsonObj: ldap json attributes
     def __BuildSearchAttributes(self, JsonObj):
         for CurrentJsonKey in JsonObj.keys():
-            if(CurrentJsonKey not in self.__Settings["SearchAtt"]):
+            if(CurrentJsonKey not in self.__Settings["SearchAtt"].split('| ')):
                 self.__Settings["SearchAtt"] += "{0}|".format(CurrentJsonKey)
 
     # _AddSetting
     # - MainBoxSql: sql class object
     def _AddSetting(self,MainBoxSql):
         MainBoxSql._AddSetting("SearchAtt",self.__Settings["SearchAtt"])
+        for CurrentSetting in self.__Settings["Info"].keys():
+            MainBoxSql._AddSetting(CurrentSetting, self.__Settings["Info"][CurrentSetting])
 
 
     # GetUsers
@@ -71,6 +73,7 @@ class BoxLdap(object):
         for Entry in SearchResult[2]:
             if(Entry["type"]=="searchResEntry"):
                 try:
+                    self.__BuildSearchAttributes(Entry["attributes"])
                     MainBoxSql.AddComputer(Entry["attributes"]["distinguishedName"], Entry["attributes"]["sAMAccountName"], Entry["attributes"])
                 except Exception as LdapExcept:
                     self.__LdapLogger.error("BoxLdap.GetComputers: Fail add computer - {0}".format(LdapExcept))
@@ -83,6 +86,7 @@ class BoxLdap(object):
         for Entry in SearchResult[2]:
             if(Entry["type"]=="searchResEntry"):
                 try:
+                    self.__BuildSearchAttributes(Entry["attributes"])
                     MainBoxSql.AddGroup(Entry["attributes"]["distinguishedName"], Entry["attributes"]["sAMAccountName"], Entry["attributes"])
                 except Exception as LdapExcept:
                     self.__LdapLogger.error("BoxLdap.GetGroups: Fail add group - {0}".format(LdapExcept))

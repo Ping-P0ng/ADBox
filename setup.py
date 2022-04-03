@@ -6,7 +6,7 @@ with open("./README.md", "r") as fh:
 
 setuptools.setup(
     name='ADBox',  
-    version='0.1.0',
+    version='0.1.1',
     author="Ping-P0ng",
     author_email="6xefe1d5@protonmail.com",
     description="ADBox is a viewer for active directory objects.",

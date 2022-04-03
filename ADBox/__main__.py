@@ -8,7 +8,7 @@ from ADBox import BoxGUI
 
 from PySide6.QtWidgets import (QApplication)
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __author__ = 'Ping-P0ng'
 # TODO: add search syntax
 # TODO: add right click search
